@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Timeseries Database</title>
+  </head>
+  <body>
+    <div>
+        <button id="lol">Close</button>
+        <button id="Submit" onclick="send()">Submit</button>
+        <button id="Submit2" onclick="send2()">Submit2</button>
+        <input type="file" id="file">
+<!--    <form method="post" action="/">-->
+<!--&lt;!&ndash;        <button onclick="myScript()">Click me</button>&ndash;&gt;-->
+<!--&lt;!&ndash;        <button id='insert'>Insert</button>&ndash;&gt;-->
+<!--        <input type="submit" value="VALUE1" name="action1"-->
+<!--               id = 'insert' onclick="myScript()">/>-->
+<!--        <input type="submit" value="VALUE2" name="action2" />-->
+    </form>
+    </div>
+  </body>
+</html>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript>
+<!--var myUploadedFile = document.getElementById("myFile").file[0];-->
+<!--console.log(myUploadedFile);-->
+<!--    const name = document.querySelector(".name");-->
+<!--       function closed () {-->
+<!--        window.close();-->
+<!--     };-->
+<!--     function myScript () {-->
+<!--         $.post( "/postmethod", {-->
+<!--        javascript_data: 12-->
+<!--        });-->
+<!--    };-->
+$("#lol").click(function(){
+    $.post( "/postmethod", {data: 12}, function(){window.close()});
+});
+
+
+<!--            window.addEventListener("unload", (event) => {-->
+<!--        console.log("hiihihihi");-->
+<!--      });-->
+
+<!--                  $("#data").click(function(){-->
+<!--                    const formData = new FormData();-->
+<!--                     const files = document.getElementById("myFile").files[0];-->
+<!--                     formData.append("myUploadedFile", files.files[0]);-->
+<!--                     const requestOptions = {-->
+<!--                        headers: {-->
+<!--                            "Content-Type": files.files[0].contentType, // This way, the Content-Type value in the header will always match the content type of the file-->
+<!--                        },-->
+<!--                        mode: "no-cors",-->
+<!--                        method: "POST",-->
+<!--                        files: files.files[0],-->
+<!--                        body: formData,-->
+<!--                    };-->
+<!--            console.log(myUploadedFile);-->
+<!--            $.post( "/data", {thing: requestOptions});-->
+<!--            });-->
+
+
+
+function send() {
+<!--    $.post( "/upload", {thing: myUploadedFile});-->
+    console.log("HI")
+    const formData = new FormData();
+    const files = document.getElementById("file");
+    formData.append("file", files.files[0]);
+    const requestOptions = {
+        headers: {
+            "Content-Type": files.files[0].contentType, // This way, the Content-Type value in the header will always match the content type of the file
+        },
+        mode: "no-cors",
+        method: "POST",
+        files: files.files[0],
+        body: formData,
+    };
+    console.log(requestOptions);
+
+    fetch("http://localhost:5000/upload", requestOptions).then(
+        (response) => {
+            console.log(response.data);
+        }
+    );
+}
+
+function send2() {
+    console.log("hi");
+    $.post( "/upload", {thing: 2});
+
+};
+
+
+
+
+
+
+</script>
