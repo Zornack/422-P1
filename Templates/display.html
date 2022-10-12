@@ -1,0 +1,35 @@
+<html>
+	<body>
+		<div class="row">
+               <div class="col-md-12">
+                  <table class="control_time_table" id='tab'>
+                     <tr>
+                        <th> Time Series </th>
+                     </tr>
+					 {% for article in items %}
+                     <tr class="control" id ='con'>
+                        <!-- Dist (km) -->
+                        <td><name="Time Series" readonly value=""/> {{
+                            article.name }} </td>
+                        <!-- Open time (read only, set by JavaScript function -->
+                     </tr>
+                     {% endfor %}
+                  </table>
+               </div>
+               <!-- col -->
+			<div>
+                    <button id='back'>Back</button>
+			</div>
+		<script type="text/javascript">
+			document.getElementById("back").onclick = function(toCalc) {
+				location.href = window.location.origin
+			};
+		</script>
+	</div>
+	</body>
+</html>
+
+
+
+
+		

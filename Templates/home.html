@@ -2,20 +2,25 @@
 <html>
   <head>
     <title>Timeseries Database</title>
+      <h1>Timeseries Database</h1>
   </head>
   <body>
     <div>
         <button id="lol">Close</button>
-        <button id="Submit" onclick="send()">Submit</button>
-        <button id="Submit2" onclick="send2()">Submit2</button>
+<!--        <button id="Submit" onclick="send()">Submit</button>-->
+        <button id="submittime">Submit Time Series</button>
         <input type="file" id="file">
+        <button id="buckets">Show buckets</button>
 <!--    <form method="post" action="/">-->
 <!--&lt;!&ndash;        <button onclick="myScript()">Click me</button>&ndash;&gt;-->
 <!--&lt;!&ndash;        <button id='insert'>Insert</button>&ndash;&gt;-->
 <!--        <input type="submit" value="VALUE1" name="action1"-->
 <!--               id = 'insert' onclick="myScript()">/>-->
 <!--        <input type="submit" value="VALUE2" name="action2" />-->
-    </form>
+<!--    </form>-->
+    </div>
+    <div>
+
     </div>
   </body>
 </html>
@@ -33,6 +38,10 @@
 <!--        javascript_data: 12-->
 <!--        });-->
 <!--    };-->
+var SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+var DISPLAY_URL = SCRIPT_ROOT + "/buckets";
+console.log(DISPLAY_URL)
+
 $("#lol").click(function(){
     $.post( "/postmethod", {data: 12}, function(){window.close()});
 });
@@ -91,8 +100,26 @@ function send2() {
 
 };
 
+<!--$("#lol").click(function(){-->
+<!--    $.post( "/postmethod", {data: 12}, function(){window.close()});-->
+<!--});-->
+
+<!--$("#buckets").click(function() {-->
+<!--        window.location.replace(http://localhost:5000/buckets);-->
+<!--});-->
 
 
+$("#buckets").click(
+    function(disp) {
+            window.location.replace('/buckets')
+     }
+)
+
+$("#submittime").click(
+    function(disp) {
+            window.location.replace('/submit')
+     }
+)
 
 
 

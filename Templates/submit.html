@@ -1,0 +1,35 @@
+{% block content %}
+<html>
+<div class="row">
+	<h1>Submit Time Series</h1>
+</div>
+<div class="row">
+	<form method="post" novalidate>
+		{{ form.hidden_tag() }}
+		<div class="col-4">
+			<div class="form-group">
+				<label class="form-check-label" for="nameBox">{{ form.name.label }}</label>
+				{{ form.name(size=32, class="form-control", id="nameBox") }}
+				<!-- <input type="text" class="form-control" placeholder="Username" aria-label="Username" name="username"> -->
+				{% if form.name.errors %}
+				<ul class="errors">
+					{% for error in form.username.errors %}
+					<li>{{ error }}</li>
+					{% endfor %}
+				</ul>
+				{% endif %}
+			</div>
+			<div class="input-group mb-4">
+				<button class="btn btn-outline-primary" id="button-register">Submit</button>
+			</div>
+		</div>
+	</form>
+</div>
+                    <button id='back'>Back</button>
+<script type="text/javascript">
+	document.getElementById("back").onclick = function(back) {
+		location.href = window.location.origin
+	};
+</script>
+</html>
+{% endblock %}

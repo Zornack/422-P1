@@ -9,13 +9,16 @@ import flask
 
 from flask import Flask, render_template, redirect, url_for
 from flask_wtf import FlaskForm
+from pip._vendor import requests
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
-
+import json
+from flask_wtf import FlaskForm as Form
 import sys
-
+from wtforms import BooleanField, StringField, validators
 from flask import request
 from multiprocessing import Process
+import requests
 
 
 
@@ -46,6 +49,10 @@ sensor_names = {"LI":"light", "HU":"humidity", "ST":"soil_temp",
 
 server = Process(target=app.run)
 
+class NameForm(Form):
+    name = StringField('TS Name', [validators.Length(min=1, max=25,message=u"Huh, little too short."),
+                                        validators.InputRequired(u"Please enter a name for the Time Series")])
+
 def shutdown_flask(self):
     from win32api import GenerateConsoleCtrlEvent
     CTRL_C_EVENT = 0
@@ -62,35 +69,132 @@ def index():
     #     elif request.form.get('action2') == 'VALUE2':
     #         webbrowser.open_new('https://www.google.com/')  # do something else
     user = "Jaryd"
-    return render_template("home.html",
-                            user_name = "Jaryd",
-                            graph_code = "<i>put graph here</i>")
+    return render_template("home.html")
 
-@app.route('/upload', methods=["GET", "POST"])
-def get_data():
-    # data = request.files['file']
-    # print("hi")
-    bucket = "test"
-    # data = request.form
-    # data = dict(data)
-    # for value in range(5):
-    #     point = (
-    #         Point("measurement1")
-    #             .tag("tagname1", "tagvalue1")
-    #             .field("field1", value)
-    #     )
-    # write_api.write(bucket=bucket, org="jcsdavis@gmail.com", record=point)
-    query_api = client.query_api()
+@app.route('/buckets', methods=["GET", "POST"])
+def buckets():
+    url = 'https://us-west-2-2.aws.cloud2.influxdata.com/api/v2/buckets'
+    headers = {
+        'Authorization': 'Token Urle4ZrRmKg_L1XG9BjzO_oBMc1zj-Fy84779erAppxBGUYgLMArHF_QnzgAPv_l0xiIRpXNwccYHm_eWGHjlg=='}
+    r = requests.get(url, headers=headers)
+    testr = json.loads(r.text)
+    # testr['buckets'].pop(3)
+    # testr['buckets'].pop
+    badNames = ['_monitoring', '_tasks']
+    badNamesIndex = 0
+    for i in range(0,len(testr['buckets'])):
+        if testr['buckets'][i]['name'] == '_monitoring':
+            badNamesIndex = i
+    testr['buckets'].pop(badNamesIndex)
+    testr['buckets'].pop(badNamesIndex)
+    return render_template("display.html", items = testr['buckets'])
 
-    query = """from(bucket: "test2")
-     |> range(start: -525600m)
-     |> filter(fn: (r) => r._measurement == "measurement1")"""
-    tables = query_api.query(query, org="jcsdavis@gmail.com")
 
-    for table in tables:
-        for record in table.records:
-            print(record)
-    return "success"
+
+@app.route('/submit', methods=["GET", "POST"])
+def make_bucket():
+    url = 'https://us-west-2-2.aws.cloud2.influxdata.com/api/v2/buckets'
+    # r = requests.get('http://localhost:8086/api/v2/authorizations/', headers=headers)
+    form = NameForm()
+    if form.validate_on_submit() and request.method == "POST" and "name" in request.form:
+        bucketName = request.form["name"]
+        headers = {'Authorization': 'Token Urle4ZrRmKg_L1XG9BjzO_oBMc1zj-Fy84779erAppxBGUYgLMArHF_QnzgAPv_l0xiIRpXNwccYHm_eWGHjlg=='}
+        payload = {
+            "description": "test",
+            "name": bucketName,
+            "orgID": "96172a9aa4f7cc00",
+            "retentionRules": [
+                {
+                    "everySeconds": 86400,
+                    "shardGroupDurationSeconds": 0,
+                    "type": "expire"
+                }
+            ],
+            "rp": "0",
+            "schemaType": "implicit"
+        }
+        # payload = {
+        #     "orgID": "96172a9aa4f7cc00",
+        #     "name": "hihi",
+        #     "description": "create a bucket",
+        #     "rp": "myrp",
+        #     "retentionRules": [
+        #         {
+        #             "type": "expire",
+        #             "everySeconds": 86400
+        #         }
+        #     ]
+        # }
+        r = requests.post(url, headers=headers, json=payload)
+        print(r.text)
+    return render_template("submit.html", form=form)
+
+# @app.route('/submit', methods=["GET", "POST"])
+# def submit_time():
+#     url = 'https://us-west-2-1.aws.cloud2.influxdata.com/api/v2/bucket'
+#     headers = {'Authorization': 'Token R4KajLyAoKlFbzArRbpNy_5gQ4lEt5QW_cfREO59E_10nUKj44RmMr5-tBYwdYa4476KXMoCEvR9tYcDYdIxhw=='}
+#     payload = {
+#     "orgID": "96172a9aa4f7cc00",
+#     "name": "mybucket",
+#     "description": "create a bucket",
+#     "rp": "myrp",
+#     "retentionRules":[
+#     {
+#     "type": "expire",
+#     "everySeconds": 86400
+#     }
+#     ]
+#     }
+#     # r = requests.get('http://localhost:8086/api/v2/authorizations/', headers=headers)
+#     r = requests.post(url, headers=headers, json=payload)
+#     form = RegisterForm()
+#     if form.validate_on_submit() and request.method == "POST" and "username" in request.form:
+#         username = request.form["username"]
+#         password = hash_password(request.form["password"])
+#         obj = {'username':username, 'password':password}
+#         registerStuff = requests.post(f'http://{backAddr}:{backPort}/register', obj)
+#         if registerStuff.status_code == 201:
+#             flash("Registered! Now please log in.")
+#             next = request.args.get("next")
+#             if not is_safe_url(next):
+#                 abort(400)
+#             return redirect(next or url_for('login'))
+#         else:
+#             flash(registerStuff.text)
+#     return render_template("register.html", form=form)
+
+# @app.route('/upload', methods=["GET", "POST"])
+# def get_data():
+#     # data = request.files['file']
+#     # print("hi")
+#     bucket = "test"
+#     # data = request.form
+#     # data = dict(data)
+#     # for value in range(5):
+#     #     point = (
+#     #         Point("measurement1")
+#     #             .tag("tagname1", "tagvalue1")
+#     #             .field("field1", value)
+#     #     )
+#     # write_api.write(bucket=bucket, org="jcsdavis@gmail.com", record=point)
+#     # query_api = client.query_api()
+#     #
+#     # query = """from(bucket: "test2")
+#     #  |> range(start: -525600m)
+#     #  |> filter(fn: (r) => r._measurement == "measurement1")"""
+#     # tables = query_api.query(query, org="jcsdavis@gmail.com")
+#     #
+#     # for table in tables:
+#     #     for record in table.records:
+#     #         print(record)
+#     url = 'https://us-west-2-2.aws.cloud2.influxdata.com/api/v2/buckets'
+#     headers = {'Authorization': 'Token Drle4ZrRmKg_L1XG9BjzO_oBMc1zj-Fy84779erAppxBGUYgLMArHF_QnzgAPv_l0xiIRpXNwccYHm_eWGHjlg=='}
+#     r = requests.get(url, headers=headers)
+#     testr = json.loads(r.text)
+#     for i in testr['buckets']:
+#         print(i['name'])
+#     return "success"
+
 
 
 @app.route('/postmethod', methods=["GET", "POST"])
@@ -98,6 +202,8 @@ def get_post_javascript_data():
     from win32api import GenerateConsoleCtrlEvent
     CTRL_C_EVENT = 0
     GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0)
+    # os._exit(0)
+    # sys.exit()
     return "success"
 
 
