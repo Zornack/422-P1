@@ -15,11 +15,13 @@ from wtforms.validators import DataRequired
 import json
 from flask_wtf import FlaskForm as Form
 import sys
-from wtforms import BooleanField, StringField, validators
+from wtforms import BooleanField, StringField, validators, SelectMultipleField
 from flask import request
 from multiprocessing import Process
 import requests
-
+import datetime
+import wtforms_validators
+from wtforms_validators import ActiveUrl, Alpha, AlphaSpace, AlphaNumeric
 
 
 import webbrowser
@@ -50,8 +52,29 @@ sensor_names = {"LI":"light", "HU":"humidity", "ST":"soil_temp",
 server = Process(target=app.run)
 
 class NameForm(Form):
-    name = StringField('TS Name', [validators.Length(min=1, max=25,message=u"Huh, little too short."),
-                                        validators.InputRequired(u"Please enter a name for the Time Series")])
+    name = StringField('TS Name', [validators.Length(min=1, max=50,message=u"Huh, little too short."),
+                                        validators.InputRequired(u"Please enter a name for the Time Series"), validators.Regexp('^[a-zA-Z0-9 ]*$', message="Time Series name can only contain letters, numbers and spaces.")])
+    description = StringField('Description', [validators.Length(min=1, max=50,message=u"Huh, little too short."),
+                                        validators.InputRequired(u"Please enter a description for the Time Series"), validators.Regexp('^[a-zA-Z0-9 ]*$', message="Time Series description can only contain letters, numbers and spaces.")])
+    domain = StringField('Application domain(s)', [validators.Length(min=1, max=50,message=u"Huh, little too short."),
+                                        validators.InputRequired(u"Please enter a domain."), validators.Regexp('^[a-zA-Z0-9 ]*$', message="Time Series description can only contain letters, numbers and spaces.")])
+    contributors = StringField('Contributors', [validators.Length(min=0, max=50, message=u"Huh, little too short."),
+                                   validators.Regexp('^[a-zA-Z0-9 ]*$',message="Time Series name can only contain letters, numbers and spaces.")])
+    reference = StringField('Paper reference', [validators.Length(min=0, max=50, message=u"Huh, little too short."),
+                                   validators.Regexp('^[a-zA-Z0-9 ]*$',message="Time Series name can only contain letters, numbers and spaces.")])
+    referenceLink = StringField('Referece link', [validators.Length(min=0, max=50, message=u"Huh, little too short."),
+                                   validators.Regexp('^[a-zA-Z0-9 ]*$',message="Time Series name can only contain letters, numbers and spaces.")])
+
+
+# #                                         validators.InputRequired(u"Please enter a name for the Time Series")])
+
+# class NameForm(Form):
+#       name = StringField('TS Name', [DataRequired(), AlphaNumeric(), AlphaSpace()])
+#       # name = StringField('TS Name', [DataRequired(), Alpha()])
+#     name = StringField('TS Name', [validators.Length(min=1, max=50,message=u"Huh, little too short."),
+#                                         validators.InputRequired(u"Please enter a name for the Time Series")])
+#     name = StringField('TS Name', [validators.Length(min=1, max=50,message=u"Huh, little too short."),
+#                                         validators.InputRequired(u"Please enter a name for the Time Series")])
 
 def shutdown_flask(self):
     from win32api import GenerateConsoleCtrlEvent
@@ -87,6 +110,17 @@ def buckets():
             badNamesIndex = i
     testr['buckets'].pop(badNamesIndex)
     testr['buckets'].pop(badNamesIndex)
+    write_api = client.write_api(write_options=SYNCHRONOUS)
+    query_api = client.query_api()
+
+    # p = Point("% of females ages 15-49 having comprehensive correct knowledge about HIV (2 prevent ways and reject 3 misconceptions)").tag("location", "Arab World").tag("country_code", "ARB").field("temperature",
+    #                                                             25.3)
+    # measurement = "poop"
+    # tag_set = "location=location1,poop=hehe"
+    # field_set = "temperature=25"
+    # date_in_nano = str(int(datetime.datetime.utcnow().timestamp() * 1000000000))
+    # p = f"{measurement},{tag_set} {field_set} {date_in_nano}"
+    # write_api.write(bucket='123', record=p)
     return render_template("display.html", items = testr['buckets'])
 
 
@@ -98,9 +132,17 @@ def make_bucket():
     form = NameForm()
     if form.validate_on_submit() and request.method == "POST" and "name" in request.form:
         bucketName = request.form["name"]
+        description = request.form["description"]
+        domain = request.form["domain"]
+        contributors = request.form["contributors"]
+        reference = request.form["reference"]
+        if request.form["contributors"] == "":
+            contributors = "_none"
+        if request.form["reference"] == "":
+            reference = "_none"
         headers = {'Authorization': 'Token Urle4ZrRmKg_L1XG9BjzO_oBMc1zj-Fy84779erAppxBGUYgLMArHF_QnzgAPv_l0xiIRpXNwccYHm_eWGHjlg=='}
         payload = {
-            "description": "test",
+            "description": description,
             "name": bucketName,
             "orgID": "96172a9aa4f7cc00",
             "retentionRules": [
@@ -125,8 +167,16 @@ def make_bucket():
         #         }
         #     ]
         # }
+        # print(bucketName)
         r = requests.post(url, headers=headers, json=payload)
-        print(r.text)
+        # print(r.text)
+        measurement='_metadata'
+        field_set='meta=1'
+        tag_set = 'description='+description+',domain='+domain+',contributors='+contributors+",reference="+reference
+        print(tag_set)
+        p = f"{measurement},{tag_set} {field_set} "
+        write_api.write(bucket=bucketName, record=p)
+        print(tag_set)
     return render_template("submit.html", form=form)
 
 # @app.route('/submit', methods=["GET", "POST"])
@@ -206,6 +256,26 @@ def get_post_javascript_data():
     # sys.exit()
     return "success"
 
+@app.route('/info/<string:bucket>', methods=["GET", "POST"])
+def info(bucket = None):
+    query_api = client.query_api()
+    tables = query_api.query(f'from(bucket: \"{bucket}\") |> range(start: -525600h) |> filter(fn: (r) => r._measurement == "_metadata")', org="jcsdavis@gmail.com")
+    info = tables[0].records[0]
+    stuff = []
+    stuff.append(info['description'])
+    stuff.append(info['domain'])
+    if info['contributors'] != "_none":
+        stuff.append(info['contributors'])
+    if info['refrence'] != "_none":
+        stuff.append(info['refrence'])
+    # bucketName = request.form["name"]
+    # description = request.form["description"]
+    # domain = request.form["domain"]
+    # contributors = request.form["contributors"]
+    # reference = request.form["reference"]
+    print(stuff)
+    return render_template("info.html", items = stuff)
+
 
 
 # @app.route('/getmethod/<jsdata>')
@@ -233,6 +303,8 @@ def parse_line(line, user_name):
 
 def open_browser():
     webbrowser.open_new('http://localhost:5000/')
+
+
 
 if __name__ == '__main__':
     from waitress import serve

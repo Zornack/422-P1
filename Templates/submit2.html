@@ -4,31 +4,38 @@
 	<h1>Submit Time Series</h1>
 </div>
 <div class="row">
+		<div class="col-md-4">
+                  <label>Format</label>
+                  <select name="format" id="format">
+                     <option value="Hierarchical">Hierarchical</option>
+                     <option value="Set">Set</option>
+                  </select>
+               </div>
+	<div class="col-md-4">
+                  <label>Format</label>
+                  <select name="Vector" id="Vector">
+                     <option value="Univariate">Univariate</option>
+                     <option value="Multivariate">Multivariate</option>
+                  </select>
+               </div>
 	<form method="post" novalidate>
 		{{ form.hidden_tag() }}
-          <label>Format</label>
-      <select name="Vector" id="Vector">
-         <option value="Univariate">Univariate</option>
-         <option value="Multivariate">Multivariate</option>
-      </select>
-          <label>Format</label>
-      <select name="format" id="format">
-         <option value="Hierarchical">Hierarchical</option>
-         <option value="Set">Set</option>
-      </select>
 		<div class="col-4">
 			<div class="form-group">
 				<label class="form-check-label" for="nameBox">{{ form.name.label }}</label>
-				{{ form.name(size=32, class="form-control", id="nameBox") }}
-				<!-- <input type="text" class="form-control" placeholder="Username" aria-label="Username" name="username"> -->
-				{% if form.name.errors %}
-				<ul class="errors">
-					{% for error in form.name.errors %}
-					<li>{{ error }}</li>
-					{% endfor %}
-				</ul>
-				{% endif %}
-                <label class="form-check-label" for="descriptionBox">{{ form.description.label }}</label>
+					{{ form.name(size=32, class="form-control", id="nameBox") }}
+					<!-- <input type="text" class="form-control" placeholder="Username" aria-label="Username" name="username"> -->
+					{% if form.name.errors %}
+					<ul class="errors">
+						{% for error in form.name.errors %}
+						<li>{{ error }}</li>
+						{% endfor %}
+					</ul>
+					{% endif %}
+				</div>
+				<div>&nbsp;</div>
+				<div>
+				<label class="form-check-label" for="descriptionBox">{{ form.description.label }}</label>
 					{{ form.description(size=32, class="form-control", id="descriptionBox") }}
 					<!-- <input type="text" class="form-control" placeholder="Username" aria-label="Username" name="username"> -->
 					{% if form.description.errors %}
@@ -38,7 +45,9 @@
 						{% endfor %}
 					</ul>
 					{% endif %}
-                <label class="form-check-label" for="domainBox">{{ form.domain.label }}</label>
+				</div>
+				<div>
+				<label class="form-check-label" for="domainBox">{{form.domain.label }}</label>
 					{{ form.domain(size=32, class="form-control", id="domainBox") }}
 					<!-- <input type="text" class="form-control" placeholder="Username" aria-label="Username" name="username"> -->
 					{% if form.domain.errors %}
@@ -48,7 +57,7 @@
 						{% endfor %}
 					</ul>
 					{% endif %}
-                    <label class="form-check-label" for="contributorsBox">{{ form.contributors.label }}</label>
+				<label class="form-check-label" for="contributorsBox">{{ form.contributors.label }}</label>
 					{{ form.contributors(size=32, class="form-control", id="contributorsBox") }}
 					<!-- <input type="text" class="form-control" placeholder="Username" aria-label="Username" name="username"> -->
 					{% if form.contributors.errors %}
@@ -58,7 +67,7 @@
 						{% endfor %}
 					</ul>
 					{% endif %}
-                    <label class="form-check-label" for="referenceBox">{{ form.reference.label }}</label>
+				<label class="form-check-label" for="referenceBox">{{ form.reference.label }}</label>
 					{{ form.reference(size=32, class="form-control", id="referenceBox") }}
 					<!-- <input type="text" class="form-control" placeholder="Username" aria-label="Username" name="username"> -->
 					{% if form.reference.errors %}
@@ -68,18 +77,7 @@
 						{% endfor %}
 					</ul>
 					{% endif %}
-                    <label class="form-check-label" for="referenceLinkBox">{{ form.referenceLink.label }}</label>
-					{{ form.referenceLink(size=32, class="form-control", id="referenceLinkBox") }}
-					<!-- <input type="text" class="form-control" placeholder="Username" aria-label="Username" name="username"> -->
-					{% if form.referenceLink.errors %}
-					<ul class="errors">
-						{% for error in form.referenceLink.errors %}
-						<li>{{ error }}</li>
-						{% endfor %}
-					</ul>
-					{% endif %}
 			</div>
-            <input type="file" id="file">
 			<div class="input-group mb-4">
 				<button class="btn btn-outline-primary" id="button-register">Submit</button>
 			</div>

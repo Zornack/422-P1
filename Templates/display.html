@@ -16,20 +16,37 @@
                      {% endfor %}
                   </table>
                </div>
-               <!-- col -->
+            </div>
 			<div>
                     <button id='back'>Back</button>
 			</div>
-		<script type="text/javascript">
-			document.getElementById("back").onclick = function(toCalc) {
-				location.href = window.location.origin
-			};
-		</script>
-	</div>
+    <form name="Item_1" action="/getLigand" method="POST">
+      <label for="exampleFormControlFile2">Choose Time Series</label>
+        <select class="colours">
+          {% for ts in items %}
+            <option value="{{ colour }}" SELECTED>{{ ts.name }}</option>
+          {% endfor %}
+        </select>
+    </form>
+            <button id="info">Show info</button>
 	</body>
 </html>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript>
 
+document.getElementById("back").onclick = function(back) {
+    location.href = window.location.origin
+};
 
+var target = $('.colours option:selected').text();
 
+<!--$("#info").click(function(){-->
+<!--    console.log($('.colours option:selected').text());-->
+<!--});-->
 
-		
+$("#info").click(
+    function(disp) {
+            window.location.replace('/info/'+target)
+     }
+);
+</script>
