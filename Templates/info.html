@@ -5,8 +5,14 @@
 	<p></p>
 	{% endfor %}
 			<div>
+
                     <button id='back'>Back</button>
 			</div>
+			<form method="POST" action="" enctype="multipart/form-data">
+			{{ form.hidden_tag() }}
+			{{ form.file }}
+			</form>
+			<button id='forecast'>Forecast</button>
     </body>
 </html>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>

@@ -79,7 +79,10 @@
 					</ul>
 					{% endif %}
 			</div>
-            <input type="file" id="file">
+			<form method="POST" action="" enctype="multipart/form-data">
+			{{ form.hidden_tag() }}
+			{{ form.file }}
+			</form>
 			<div class="input-group mb-4">
 				<button class="btn btn-outline-primary" id="button-register">Submit</button>
 			</div>

@@ -6,6 +6,8 @@ from flask import Flask, request, render_template
 from flask_restful import Resource, Api
 import os
 import flask
+from metrics import *
+import csv
 
 from flask import Flask, render_template, redirect, url_for
 from flask_wtf import FlaskForm
@@ -22,12 +24,19 @@ import requests
 import datetime
 import wtforms_validators
 from wtforms_validators import ActiveUrl, Alpha, AlphaSpace, AlphaNumeric
-
+from flask_wtf.file import FileField
+import pandas as pd
+from influxdb_client import InfluxDBClient
 
 import webbrowser
 from threading import Timer
 
 from multiprocessing import Process
+
+from flask import url_for, redirect, render_template
+from flask_wtf import FlaskForm
+from flask_wtf.file import FileField
+from werkzeug.utils import secure_filename
 
 
 
@@ -64,6 +73,9 @@ class NameForm(Form):
                                    validators.Regexp('^[a-zA-Z0-9 ]*$',message="Time Series name can only contain letters, numbers and spaces.")])
     referenceLink = StringField('Referece link', [validators.Length(min=0, max=50, message=u"Huh, little too short."),
                                    validators.Regexp('^[a-zA-Z0-9 ]*$',message="Time Series name can only contain letters, numbers and spaces.")])
+    file = FileField('File')
+class forecast(Form):
+    file = FileField('File')
 
 
 # #                                         validators.InputRequired(u"Please enter a name for the Time Series")])
@@ -75,7 +87,7 @@ class NameForm(Form):
 #                                         validators.InputRequired(u"Please enter a name for the Time Series")])
 #     name = StringField('TS Name', [validators.Length(min=1, max=50,message=u"Huh, little too short."),
 #                                         validators.InputRequired(u"Please enter a name for the Time Series")])
-
+print(compute_error_metrics([1,2,3],[2,5,12]))
 def shutdown_flask(self):
     from win32api import GenerateConsoleCtrlEvent
     CTRL_C_EVENT = 0
@@ -123,6 +135,40 @@ def buckets():
     # write_api.write(bucket='123', record=p)
     return render_template("display.html", items = testr['buckets'])
 
+class UploadForm(FlaskForm):
+    file = FileField()
+
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload():
+    form = UploadForm()
+
+    if form.validate_on_submit():
+        filename = secure_filename(form.file.data.filename)
+        form.file.data.save('uploads/' + filename)
+        with open('uploads/'+filename, "r") as f:
+            next(f)
+            reader = csv.reader(f, delimiter="\t")
+            for i, line in enumerate(reader):
+                line = line[0].split(',')
+                measurement = "_measurement"
+                tag_set = 'Date='+line[0]+',Hour='+line[1]
+                field_set = 'HOEP='+line[2]
+                p = f"{measurement},{tag_set} {field_set} "
+                write_api.write(bucket='HOEP', record=p)
+        os.remove('uploads/'+filename)
+
+        # write_api.write("cpu test", "jcsdavis@gmail.com", record=df,
+        #                    data_frame_measurement_name="_measurement",
+        #                    data_frame_tag_columns=['region', 'host'])
+        return redirect(url_for('upload'))
+
+    return render_template('upload.html', form=form)
+
+@app.route('/metrics/<string:bucket>', methods=["GET", "POST"])
+def metrics(bucket = None):
+    query_api = client.query_api()
+    tables = query_api.query(f'from(bucket: \"{bucket}\") |> range(start: -525600h) |> filter(fn: (r) => r._measurement == "_measurement")', org="jcsdavis@gmail.com",)
 
 
 @app.route('/submit', methods=["GET", "POST"])
@@ -131,6 +177,13 @@ def make_bucket():
     # r = requests.get('http://localhost:8086/api/v2/authorizations/', headers=headers)
     form = NameForm()
     if form.validate_on_submit() and request.method == "POST" and "name" in request.form:
+        # contents = file.read()
+        tags = ['description','domain','contributors','reference']
+        for tag in tags:
+            if tag != '':
+                request.form[tag].lstrip()
+                request.form[tag].rstrip()
+                request.form[tag].replace(' ', '\ ')
         bucketName = request.form["name"]
         description = request.form["description"]
         domain = request.form["domain"]
@@ -147,7 +200,7 @@ def make_bucket():
             "orgID": "96172a9aa4f7cc00",
             "retentionRules": [
                 {
-                    "everySeconds": 86400,
+                    "everySeconds": 0,
                     "shardGroupDurationSeconds": 0,
                     "type": "expire"
                 }
@@ -173,10 +226,16 @@ def make_bucket():
         measurement='_metadata'
         field_set='meta=1'
         tag_set = 'description='+description+',domain='+domain+',contributors='+contributors+",reference="+reference
-        print(tag_set)
+        # print(tag_set)
         p = f"{measurement},{tag_set} {field_set} "
         write_api.write(bucket=bucketName, record=p)
-        print(tag_set)
+        # df = pd.read_csv(request.form['file'])
+        # df['_time'] = pd.to_datetime(df['_time'], format="%Y-%m-%dT%H:%M:%SZ")
+        # df.set_index(['_time'])
+        #
+        # write_api.write(bucketName, "anais@influxdata.com", record=df,
+        #                    data_frame_measurement_name="_measurement",
+        #                    data_frame_tag_columns=['region', 'host'])
     return render_template("submit.html", form=form)
 
 # @app.route('/submit', methods=["GET", "POST"])
@@ -258,23 +317,31 @@ def get_post_javascript_data():
 
 @app.route('/info/<string:bucket>', methods=["GET", "POST"])
 def info(bucket = None):
+    form = forecast()
     query_api = client.query_api()
-    tables = query_api.query(f'from(bucket: \"{bucket}\") |> range(start: -525600h) |> filter(fn: (r) => r._measurement == "_metadata")', org="jcsdavis@gmail.com")
+    tables = query_api.query(f'from(bucket: \"{bucket}\") |> range(start: -525600h) |> filter(fn: (r) => r._measurement == "_metadata")', org="jcsdavis@gmail.com",)
+    # output = tables.to_json(indent=5)
+    # df = pd.read_json(output)
+    # df.to_csv('csvfile.csv', encoding='utf-8', index=False)
+    # data = pd.read_csv('csvfile.csv')
+    # for i in range(0,10):
+    #     data.drop(columns=df.columns[i], inplace=True)
+    # print(data)
     info = tables[0].records[0]
     stuff = []
     stuff.append(info['description'])
     stuff.append(info['domain'])
     if info['contributors'] != "_none":
         stuff.append(info['contributors'])
-    if info['refrence'] != "_none":
-        stuff.append(info['refrence'])
+    if info['reference'] != "_none":
+        stuff.append(info['reference'])
     # bucketName = request.form["name"]
     # description = request.form["description"]
     # domain = request.form["domain"]
     # contributors = request.form["contributors"]
     # reference = request.form["reference"]
     print(stuff)
-    return render_template("info.html", items = stuff)
+    return render_template("info.html", items = stuff, form = form)
 
 
 
